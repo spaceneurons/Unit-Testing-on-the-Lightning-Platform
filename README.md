@@ -217,3 +217,48 @@ private class PositivePermission_tests {
   }
 }
 ```
+## Use Mocks and Stub Objects
+Write tests using mocks and stubs
+Not every call to a third party service succeeds. So, we need to test both success and failure responses. Write a unit test to cover the ExternalSearch classes’ handling of response codes higher than 200.
+Add a unit test method to ExternalSearch_tests.cls that uses the HTTPMockFactory class to return a 500 response
+Make sure you have 100% code coverage on the ExternalSearch class
+!!!ExternalSearch.apex!!!
+```public class ExternalSearch {
+	public class ExternalSearchException extends Exception{}
+  
+  public static string googleIt(String query){
+    Http h = new Http();
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('https://www.google.com?q='+query);
+    req.setMethod('GET');
+    HttpResponse res = h.send(req);
+    return res.getBody();
+  }
+}
+```
+!!!ExternalSearch_Tests.apex!!!
+```@isTest
+private class ExternalSearch_Tests {
+  @isTest
+  static void test_method_one() {
+    HttpMockFactory mock = new HttpMockFactory(200, 'OK', 'I found it!', new Map<String,String>());
+    Test.setMock(HttpCalloutMock.class, mock);
+    String result;
+    Test.startTest();
+      result = ExternalSearch.googleIt('epic search');
+    Test.stopTest();
+    system.assertEquals('I found it!', result);
+  }
+     @isTest static void test_method_two() {
+    HttpMockFactory mock = new HttpMockFactory(500, 'Internal Server Error', 'server issue!', new Map<String,String>());
+    Test.setMock(HttpCalloutMock.class, mock);
+    String result;
+    Test.startTest();
+      result = ExternalSearch.googleIt('server issue');
+    Test.stopTest();
+    system.assertEquals('server issue!', result); 
+  }
+}
+```
+
+
